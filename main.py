@@ -29,8 +29,8 @@ def video_inference(video_path: Path, model) -> Path:
     fps = int(capture.get(cv2.CAP_PROP_FPS))
     
     # Define the codec and create the VideoWriter object
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    video_writer = cv2.VideoWriter('output.mp4', fourcc, 30.0, (frame_width, frame_height))
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # mp4 codec
+    video_writer = cv2.VideoWriter('output.mp4', fourcc, fps, (frame_width, frame_height))
     
     print(f"Processing video: {video_path}")
     
@@ -93,7 +93,7 @@ def predict_img():
                 
                 print("\nFinished video processing...\n")
                 
-                return redirect(url_for('download_file', filename=os.path.basename(processed_video_path)))
+                # return redirect(url_for('download_file', filename=os.path.basename(processed_video_path))) 
             
     # folder_path = 'runs/detect'
     # subfolders = [f for f in os.listdir(folder_path) if os.path.isdir(os.path.join(folder_path, f))]
@@ -103,9 +103,9 @@ def predict_img():
 
 
 # function to display the detected objects video on html page
-@app.route("/download/<filename>")
-def download_file(filename):
-    return send_from_directory(directory="runs/detect", filename=filename)
+# @app.route("/download/<filename>")
+# def download_file(filename):
+#     return send_from_directory(directory="runs/detect", filename=filename)
 
 @app.route("/video_feed")
 def video_feed():
