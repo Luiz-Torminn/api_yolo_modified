@@ -10,50 +10,42 @@ from flask import Flask, render_template, request, Response, redirect, url_for
 from ultralytics import YOLO
 
 app = Flask(__name__)
-    
+
+codecs = ['XVID', 'mp4v', 'avc1']
 
 def video_inference(video_path: Path, model) -> Path:
     video_path = Path(video_path)
     
-    # Define the output path for the processed video
     output_dir = f"{os.getcwd()}/runs/detect"
-    os.makedirs(output_dir, exist_ok=True)  # Create directory if it doesn't exist
-    output_path = f"{output_dir}/{video_path.stem}_processed{video_path.suffix}"
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = f"{output_dir}/{video_path.stem}_processed.mp4"  # Change to .avi
     
-    # Open the input video
     capture = cv2.VideoCapture(str(video_path))
     
-    # Get video properties (width, height, fps)
     frame_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    fps = int(capture.get(cv2.CAP_PROP_FPS))
+    fps = capture.get(cv2.CAP_PROP_FPS)  # Use float for fps
     
-    # Define the codec and create the VideoWriter object
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # mp4 codec
-    video_writer = cv2.VideoWriter('output.mp4', fourcc, fps, (frame_width, frame_height))
     
-    print(f"Processing video: {video_path}")
+    for codec in codecs:
+        fourcc = cv2.VideoWriter_fourcc(*codec)
+        video_writer = cv2.VideoWriter(str(output_path), fourcc, fps, (frame_width, frame_height))
+        
+        if not video_writer.isOpened():
+            print(f"Error: Could not open VideoWriter with output path: {output_path}")
+            continue
     
     while capture.isOpened():
         ret, frame = capture.read()
-        
         if not ret:
             break
         
-        # Perform YOLO prediction on the frame
         result = model.predict(frame)
-        
-        # Get the frame with the detections drawn on it
         plotted_result = result[0].plot()
-        
-        # Write the processed frame to the output video
         video_writer.write(plotted_result)
     
-    # Release the video capture and writer objects to finalize the output video
     capture.release()
     video_writer.release()
-    
-    print(f"\nVideo processing completed. Output saved to: {output_path}")
     
     return output_path
 
@@ -89,11 +81,12 @@ def predict_img():
             elif files.filename.endswith('.mp4'):
                 video_path = filepath
                 print(video_path)
-                processed_video_path = video_inference(video_path, model)
+                # processed_video_path = video_inference(video_path, model)
+                video_inference(video_path, model)
                 
                 print("\nFinished video processing...\n")
                 
-                # return redirect(url_for('download_file', filename=os.path.basename(processed_video_path))) 
+                # return redirect(url_for('download_file', filename=os.path.basename(processed_video_path)))
             
     # folder_path = 'runs/detect'
     # subfolders = [f for f in os.listdir(folder_path) if os.path.isdir(os.path.join(folder_path, f))]
