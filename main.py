@@ -2,7 +2,6 @@ import argparse
 
 import os
 import cv2
-import time
 from pathlib import Path
 from werkzeug.utils import send_from_directory
 from flask import Flask, render_template, request, Response, redirect, url_for
@@ -34,6 +33,9 @@ def video_inference(video_path: Path, model) -> Path:
         if not video_writer.isOpened():
             print(f"Error: Could not open VideoWriter with output path: {output_path}")
             continue
+        
+        else: 
+            break
     
     while capture.isOpened():
         ret, frame = capture.read()
@@ -81,12 +83,12 @@ def predict_img():
             elif files.filename.endswith('.mp4'):
                 video_path = filepath
                 print(video_path)
-                # processed_video_path = video_inference(video_path, model)
+                processed_video_path = video_inference(video_path, model)
                 video_inference(video_path, model)
                 
                 print("\nFinished video processing...\n")
                 
-                # return redirect(url_for('download_file', filename=os.path.basename(processed_video_path)))
+                return redirect(url_for('download_file', filename=os.path.basename(processed_video_path)))
             
     # folder_path = 'runs/detect'
     # subfolders = [f for f in os.listdir(folder_path) if os.path.isdir(os.path.join(folder_path, f))]
@@ -96,9 +98,10 @@ def predict_img():
 
 
 # function to display the detected objects video on html page
-# @app.route("/download/<filename>")
-# def download_file(filename):
-#     return send_from_directory(directory="runs/detect", filename=filename)
+@app.route("/download/<filename>")
+def download_file(filename):
+    environ = request.environ
+    return send_from_directory(directory="runs/detect", path=filename, environ=environ)
 
 @app.route("/video_feed")
 def video_feed():
