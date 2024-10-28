@@ -1,8 +1,9 @@
 import argparse
 
+from utils.video_inference import VideoInference
+
 import os
 import cv2
-from pathlib import Path
 from werkzeug.utils import send_from_directory
 from flask import Flask, render_template, request, Response, redirect, url_for
 
@@ -10,50 +11,11 @@ from ultralytics import YOLO
 
 app = Flask(__name__)
 
-codecs = ['XVID', 'mp4v', 'avc1']
-
-def video_inference(video_path: Path, model) -> Path:
-    video_path = Path(video_path)
-    
-    output_dir = f"{os.getcwd()}/runs/detect"
-    os.makedirs(output_dir, exist_ok=True)
-    output_path = f"{output_dir}/{video_path.stem}_processed.mp4"  # Change to .avi
-    
-    capture = cv2.VideoCapture(str(video_path))
-    
-    frame_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
-    frame_height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    fps = capture.get(cv2.CAP_PROP_FPS)  # Use float for fps
-    
-    
-    for codec in codecs:
-        fourcc = cv2.VideoWriter_fourcc(*codec)
-        video_writer = cv2.VideoWriter(str(output_path), fourcc, fps, (frame_width, frame_height))
-        
-        if not video_writer.isOpened():
-            print(f"Error: Could not open VideoWriter with output path: {output_path}")
-            continue
-        
-        else: 
-            break
-    
-    while capture.isOpened():
-        ret, frame = capture.read()
-        if not ret:
-            break
-        
-        result = model.predict(frame)
-        plotted_result = result[0].plot()
-        video_writer.write(plotted_result)
-    
-    capture.release()
-    video_writer.release()
-    
-    return output_path
 
 #%%
 MODEL_PATH = [f'{os.getcwd()}/model/{m}' for m in os.listdir('model')][0]
-print(MODEL_PATH)
+video_inference = VideoInference()
+
 
 #%%
 @app.route("/")
@@ -83,17 +45,12 @@ def predict_img():
             elif files.filename.endswith('.mp4'):
                 video_path = filepath
                 print(video_path)
-                processed_video_path = video_inference(video_path, model)
-                video_inference(video_path, model)
+                processed_video_path = video_inference(model, video_path)
                 
                 print("\nFinished video processing...\n")
                 
                 return redirect(url_for('download_file', filename=os.path.basename(processed_video_path)))
             
-    # folder_path = 'runs/detect'
-    # subfolders = [f for f in os.listdir(folder_path) if os.path.isdir(os.path.join(folder_path, f))]
-    # latest_subfolder = max(subfolders, key=lambda x: os.path.getctime(os.path.join(folder_path, x)))
-    # image_path = folder_path + '/' + latest_subfolder + '/' + files.filename
     return render_template('index.html')
 
 
