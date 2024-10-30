@@ -28,7 +28,12 @@ def predict_img():
         if 'file' in request.files:
             files = request.files['file']
             basepath = os.path.dirname(__file__)
-            filepath = os.path.join(basepath, 'uploads', files.filename)
+
+            if len(files) > 1:
+                filepaths = [os.path.join(basepath, 'uploads', fp) for fp.filename in files]
+                
+            else: 
+                filepath = os.path.join(basepath, 'uploads', files.filename)
             
             print("File was uploaded to: ", filepath)
             
@@ -37,10 +42,10 @@ def predict_img():
             model = YOLO(MODEL_PATH)
             
             if files.filename.endswith('.jpg'):
-                img = cv2.imread(filepath)
-                detections = model(img, save=True)
-                
-                return hello_world()
+                img = cv2.imread(filepath) if len(files) == 1 else [cv2.imread(path) for path in filepaths]
+                detections = model(img, save=True) # FINISHE WRITING THE LOGIC FOR MULTIPLE FILES...
+
+                return redirect(url_for('download_file', filename=os.path.basename(filepath)))
             
             elif files.filename.endswith('.mp4'):
                 video_path = filepath
