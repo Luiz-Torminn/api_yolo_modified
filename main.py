@@ -42,9 +42,9 @@ def predict_img():
             model = YOLO(MODEL_PATH)
             
             if files.filename.endswith('.jpg'):
-                img = cv2.imread(filepath) if len(files) == 1 else [cv2.imread(path) for path in filepaths]
-                detections = model(img, save=True) # FINISHE WRITING THE LOGIC FOR MULTIPLE FILES...
-
+                img = cv2.imread(filepath) if len(files) == 1 else [cv2. for path in filepaths cv2.imread(path)]
+                detections = model(img, save=True) # FINISH THE MULTIPLE IMAGE-FILES LOGIC...
+                
                 return redirect(url_for('download_file', filename=os.path.basename(filepath)))
             
             elif files.filename.endswith('.mp4'):
