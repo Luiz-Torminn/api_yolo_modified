@@ -47,6 +47,8 @@
   href="/static/assets/plugins/summernote/summernote-bs4.min.css"
 />
 <link rel="stylesheet" href="/static/assets/css/display.css" />
+<link rel="stylesheet" href="/static/assets/css/overwrite.css" />
+
 {% endblock stylesheets %} {% block content %}
 <div class="content-wrapper">
   <!-- Content Header (Page header) -->
@@ -65,7 +67,7 @@
     <!-- Main content -->
     <section class="display-content">
       {%for img in imgs%}
-      <img  src="{{ url_for('download_file', filename=img) }}" class='display-image' type="">
+      <img  src="{{ img }}" class='display-image' type="">
       {%endfor%}
     </section>
     <!-- /.content -->
