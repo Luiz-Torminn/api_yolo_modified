@@ -26,30 +26,26 @@ def hello_world():
 def predict_img():
     if request.method == "POST":
         if 'file' in request.files:
-            files = request.files['file']
+            files = request.files.getlist('file')  # Use getlist to handle multiple files
             basepath = os.path.dirname(__file__)
-
-            if len(files) > 1:
-                filepaths = [os.path.join(basepath, 'uploads', fp) for fp.filename in files]
-                
-            else: 
-                filepath = os.path.join(basepath, 'uploads', files.filename)
             
-            print("File was uploaded to: ", filepath)
-            
-            files.save(filepath)
+            # Generate file paths for each uploaded file
+            filepaths = [os.path.join(basepath, 'uploads', fp.filename) for fp in files]
+            for fp, filepath in zip(files, filepaths):
+                fp.save(filepath)  # Save each file to its respective path
             
             model = YOLO(MODEL_PATH)
             
-            if files.filename.endswith('.jpg'):
-                img = cv2.imread(filepath) if len(files) == 1 else [cv2. for path in filepaths cv2.imread(path)]
-                detections = model(img, save=True) # FINISH THE MULTIPLE IMAGE-FILES LOGIC...
+            if any(fp.filename.endswith('.jpg') for fp in files):
+                imgs = [cv2.imread(path) for path in filepaths]
+                detections = [model(img, save=True) for img in imgs]
                 
-                return redirect(url_for('download_file', filename=os.path.basename(filepath)))
+                # Get the paths to the saved images
+                image_paths = [os.path.join('./runs/detect', img) for img in os.listdir('./runs/detect')]
+                return redirect(url_for('display_images'))     
             
-            elif files.filename.endswith('.mp4'):
-                video_path = filepath
-                print(video_path)
+            elif any(fp.filename.endswith('.mp4') for fp in files):
+                video_path = filepaths[0]  # Assuming the first file is a video if it's present
                 processed_video_path = video_inference(model, video_path)
                 
                 print("\nFinished video processing...\n")
@@ -63,7 +59,14 @@ def predict_img():
 @app.route("/download/<filename>")
 def download_file(filename):
     environ = request.environ
+    filename = Path(filename).name
+
     return send_from_directory(directory="runs/detect", path=filename, environ=environ)
+
+@app.route("/display")
+def display_images(image_paths):
+    return render_template('display.html', imgs = image_paths)
+    
 
 @app.route("/video_feed")
 def video_feed():
