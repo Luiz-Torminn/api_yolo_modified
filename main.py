@@ -7,7 +7,9 @@ import cv2
 from werkzeug.utils import send_from_directory
 from ultralytics import YOLO
 
-from pathlib import Pathapp = Flask(__name__)
+from pathlib import Path
+
+app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
 
@@ -23,8 +25,8 @@ def hello_world():
 
 @app.route("/", methods=["GET", "POST"])
 def predict_img():
-    if os.path.exists('./runs/detect/predict'):
-        shutil.rmtree('./runs/detect/predict')
+    if os.path.exists('./runs'):
+        shutil.rmtree('./runs')
 
     if request.method == "POST":
         if 'file' in request.files:
@@ -40,14 +42,18 @@ def predict_img():
 
             if any(fp.filename.endswith(('.jpg', '.png')) for fp in files):
 
-                print('File got to here AS WELL')
                 for filepath in filepaths:
                     img = cv2.imread(filepath)
-                    detection = model(img, save=True)
+                    detection = model(img, save=True, name='predict')
                 
                 # Get paths to the saved images
-                image_paths = [os.path.join('./runs/detect/predict', img) 
-                               for img in os.listdir('./runs/detect/predict') if img.endswith(('.jpg', '.png'))]image_paths = [os.path.join('./runs/detect/predict', img) for img in os.listdir('./runs/detect/predict')]
+                # image_paths = [img for img in os.listdir('./runs/detect/predict') if img.endswith(('.jpg', '.png'))]
+                image_paths = []
+                for dirname, _, imgs in os.walk('./runs/detect'):
+                    for img in imgs: 
+                        if img.endswith(('jpg', 'png')):
+                            relative_path = os.path.relpath(os.path.join(dirname, img), 'runs/detect')
+                            image_paths.append(relative_path)
 
                 # Store image paths in session and redirect to display route
                 session['image_paths'] = image_paths
@@ -66,12 +72,15 @@ def predict_img():
 
 
 # function to display the detected objects video on html page
-@app.route("/download/<filename>")
+@app.route("/download/<path:filename>")
 def download_file(filename):
     environ = request.environ
-    filename = Path(filename).name
 
-    return send_from_directory(directory="runs/detect", path=filename, environ=environ)
+    if filename.endswith(('.jpg', '.png')):
+        return send_from_directory(directory="runs/detect", path=filename, environ=environ)
+    else:
+        filename = Path(filename).name
+        return send_from_directory(directory="runs/detect", path=filename, environ=environ)
 
 @app.route("/display")
 def display_images():

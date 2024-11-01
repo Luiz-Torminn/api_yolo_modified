@@ -66,9 +66,11 @@
 
     <!-- Main content -->
     <section class="display-content">
+
       {%for img in imgs%}
-      <img  src="{{ img }}" class='display-image' type="">
+      <img  src="{{ url_for('download_file', filename=img) }}" class='display-image' type="">
       {%endfor%}
+
     </section>
     <!-- /.content -->
   </div>
